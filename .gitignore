@@ -1,12 +1,74 @@
+# ==============================
+# Environment Variables & Secrets
+# ==============================
+.env
+.env.*
+!.env.example
+
+# ==============================
+# Python
+# ==============================
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
 .venv/
 env/
-instance/*.db
-!instance/.gitkeep
-database/*.db
-!database/.gitkeep
-models/*.joblib
-!models/.gitkeep
-.env
+ENV/
+pip-wheel-metadata/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ==============================
+# Node.js / React
+# ==============================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.npm/
+dist/
+build/
+.next/
+coverage/
+
+# ==============================
+# IDEs & Editors
+# ==============================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ==============================
+# Logs & Temporary Files
+# ==============================
+*.log
+logs/
+tmp/
+temp/
+
+# ==============================
+# Databases
+# ==============================
+*.sqlite3-journal
+*.db-journal
+
+# ==============================
+# Testing & ML Artifacts
+# ==============================
+.ipynb_checkpoints/
+wandb/
+mlruns/
+
+# ==============================
+# Local Configuration
+# ==============================
+*.local
