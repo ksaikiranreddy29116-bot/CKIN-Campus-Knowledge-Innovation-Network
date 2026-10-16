@@ -1,0 +1,696 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.title }} — CKIN{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom p-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge badge-{{ project.status }} fs-6">{{ project.status | capitalize }}</span>
+                        <span class="badge bg-info text-dark">{{ project.domain }}</span>
+                        <span class="badge bg-secondary">{{ project.project_type }}</span>
+                        <span class="text-secondary small">Project ID: #{{ project.id }}</span>
+                    </div>
+                    <h2 class="fw-bold text-cyan mb-1">{{ project.title }}</h2>
+                    <p class="text-secondary mb-0">Created by <strong>{{ project.creator_name }}</strong> &bull; Submitted {{ project.created_at }}</p>
+                </div>
+
+                <!-- Faculty Approval Controls -->
+                {% if session.get('role') == 'faculty' and project.status == 'pending' %}
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success fw-bold btn-approve-project" data-project-id="{{ project.id }}">
+                        <i class="fa-solid fa-check me-1"></i> Approve Project
+                    </button>
+                    <button class="btn btn-danger fw-bold" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                        <i class="fa-solid fa-xmark me-1"></i> Reject Project
+                    </button>
+                </div>
+                {% endif %}
+
+                <!-- Student Join Request Button -->
+                {% if session.get('role') == 'student' and not is_member and project.status == 'approved' %}
+                <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#joinModal">
+                    <i class="fa-solid fa-user-plus me-1"></i> Request to Join Team
+                </button>
+                {% endif %}
+            </div>
+
+            {% if project.status == 'rejected' and project.rejection_reason %}
+            <div class="alert alert-danger border-0 mb-3">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Faculty Rejection Reason:</strong> {{ project.rejection_reason }}
+            </div>
+            {% endif %}
+
+            <p class="text-light fs-5 mb-4">{{ project.description }}</p>
+
+            <div class="row g-3 bg-dark p-3 rounded border border-secondary border-opacity-25">
+                <div class="col-md-3">
+                    <small class="text-secondary d-block">Required Skills</small>
+                    <strong class="text-info">{{ project.required_skills }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-secondary d-block">Difficulty Level</small>
+                    <strong class="text-light">{{ project.difficulty_level }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-secondary d-block">Weekly Commitment</small>
+                    <strong class="text-light">{{ project.weekly_commitment }} Hours/Week</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-secondary d-block">Team Capacity</small>
+                    <strong class="text-light">{{ members|length }} / {{ project.team_size }} Members</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Team, Tasks, Milestones, Comments -->
+    <div class="col-lg-7">
+        <!-- Team Members Card -->
+        <div class="card card-custom p-4 mb-4">
+            <h4 class="fw-bold text-cyan mb-3"><i class="fa-solid fa-users me-2"></i> Current Team Members</h4>
+            <div class="list-group list-group-flush bg-transparent">
+                {% for m in members %}
+                <div class="list-group-item bg-transparent text-light border-secondary border-opacity-25 px-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold mb-0">{{ m.name }} <span class="badge bg-secondary ms-1">{{ m.role_in_project }}</span></h6>
+                        <small class="text-secondary">{{ m.email }} &bull; Skills: {{ m.skills if m.skills else 'N/A' }}</small>
+                    </div>
+                    {% if m.student_id == project.creator_id %}
+                    <span class="badge bg-info text-dark">Project Creator</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Project Tasks Card -->
+        <div class="card card-custom p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold text-cyan mb-0"><i class="fa-solid fa-list-check me-2"></i> Tasks & Progress</h4>
+                {% if is_member or is_creator or session.get('role') in ['faculty', 'admin'] %}
+                <button type="button" class="btn btn-sm btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                    <i class="fa-solid fa-plus me-1"></i> Add Task
+                </button>
+                {% endif %}
+            </div>
+
+            {% if tasks %}
+                <div class="list-group list-group-flush bg-transparent">
+                    {% for t in tasks %}
+                    <div class="list-group-item bg-transparent text-light border-secondary border-opacity-25 px-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="fw-bold mb-0 text-white">{{ t.title }}</h6>
+                            <div class="d-flex align-items-center gap-2">
+                                {% set p_color = 'danger' if t.priority == 'High' else ('warning' if t.priority == 'Medium' else 'secondary') %}
+                                <span class="badge bg-{{ p_color }}">{{ t.priority or 'Medium' }}</span>
+                                <span class="badge bg-{{ 'success' if t.progress == 100 else ('info' if t.status == 'in_progress' else 'warning') }}">
+                                    {{ t.status | replace('_', ' ') | capitalize }}
+                                </span>
+                                <span class="badge bg-secondary">{{ t.progress }}%</span>
+                            </div>
+                        </div>
+                        {% if t.description %}
+                        <p class="text-secondary small mb-2">{{ t.description }}</p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center mb-2 small text-secondary">
+                            <span><i class="fa-solid fa-user me-1"></i> Assigned: <strong>{{ t.assignee_name or 'Unassigned' }}</strong></span>
+                            {% if t.due_date %}
+                            <span><i class="fa-solid fa-calendar me-1"></i> Due: {{ t.due_date }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar progress-bar-custom" style="width: {{ t.progress }}%;"></div>
+                        </div>
+
+                        {% if is_member or is_creator or session.get('role') in ['faculty', 'admin'] %}
+                        <div class="d-flex align-items-center gap-2 mt-2 pt-1 border-top border-secondary border-opacity-25">
+                            <small class="text-secondary">Progress:</small>
+                            <input type="number" min="0" max="100" class="form-control form-control-sm text-center task-progress-input" value="{{ t.progress }}" style="width: 70px;">
+                            <select class="form-select form-select-sm task-status-select" style="width: 120px;">
+                                <option value="pending" {% if t.status == 'pending' %}selected{% endif %}>To Do</option>
+                                <option value="in_progress" {% if t.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                <option value="completed" {% if t.status == 'completed' %}selected{% endif %}>Completed</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-custom btn-update-task-progress" data-task-id="{{ t.id }}">Update</button>
+                            <button class="btn btn-sm btn-outline-danger btn-delete-project-task ms-auto" data-task-id="{{ t.id }}"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="py-3 text-center">
+                    <p class="text-secondary mb-3">No tasks created for this project yet.</p>
+                    {% if is_member or is_creator or session.get('role') in ['faculty', 'admin'] %}
+                    <button type="button" class="btn btn-sm btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                        <i class="fa-solid fa-plus me-1"></i> Add First Task
+                    </button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Milestones Card -->
+        <div class="card card-custom p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold text-cyan mb-0"><i class="fa-solid fa-flag-checkered me-2"></i> Project Milestones</h4>
+                {% if is_member or is_creator or session.get('role') in ['faculty', 'admin'] %}
+                <button type="button" class="btn btn-sm btn-outline-custom" data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
+                    <i class="fa-solid fa-plus me-1"></i> Add Milestone
+                </button>
+                {% endif %}
+            </div>
+
+            {% if milestones %}
+                <div class="list-group list-group-flush bg-transparent">
+                    {% for ms in milestones %}
+                    <div class="list-group-item bg-transparent text-light border-secondary border-opacity-25 px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold {% if ms.status == 'completed' %}text-decoration-line-through text-secondary{% else %}text-white{% endif %}">
+                                {{ ms.title }}
+                            </span>
+                            {% if ms.description %}
+                            <small class="text-secondary d-block">{{ ms.description }}</small>
+                            {% endif %}
+                            <small class="text-info d-block">Target: {{ ms.due_date or 'TBD' }}</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if is_member or is_creator or session.get('role') in ['faculty', 'admin'] %}
+                            <button class="btn btn-sm btn-{{ 'success' if ms.status == 'completed' else 'outline-secondary' }} btn-toggle-milestone"
+                                    data-id="{{ ms.id }}" data-status="{{ 'pending' if ms.status == 'completed' else 'completed' }}">
+                                <i class="fa-solid fa-{{ 'circle-check' if ms.status == 'completed' else 'circle' }}"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-delete-milestone" data-id="{{ ms.id }}"><i class="fa-solid fa-trash"></i></button>
+                            {% else %}
+                            <span class="badge bg-{{ 'success' if ms.status == 'completed' else 'secondary' }}">{{ ms.status | capitalize }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-secondary mb-0 small">No milestones defined for this project.</p>
+            {% endif %}
+        </div>
+
+        <!-- Project Resources Card -->
+        <div class="card card-custom p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold text-cyan mb-0"><i class="fa-solid fa-link me-2"></i> Resources & Links</h4>
+                {% if is_member or is_creator or session.get('role') in ['faculty', 'admin'] %}
+                <button type="button" class="btn btn-sm btn-outline-custom" data-bs-toggle="modal" data-bs-target="#addResourceModal">
+                    <i class="fa-solid fa-plus me-1"></i> Add Resource
+                </button>
+                {% endif %}
+            </div>
+
+            {% if resources %}
+                <div class="row g-2">
+                    {% for res in resources %}
+                    <div class="col-md-6">
+                        <div class="p-3 bg-dark rounded border border-secondary border-opacity-25 d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="fw-bold mb-1"><a href="{{ res.resource_url }}" target="_blank" class="text-info text-decoration-none"><i class="fa-solid fa-arrow-up-right-from-square me-1"></i> {{ res.title }}</a></h6>
+                                {% if res.description %}
+                                <p class="text-secondary small mb-1">{{ res.description }}</p>
+                                {% endif %}
+                                <small class="text-muted d-block">Added by {{ res.uploader_name }}</small>
+                            </div>
+                            {% if res.uploader_id == session.get('user_id') or session.get('role') in ['faculty', 'admin'] %}
+                            <button class="btn btn-sm btn-link text-danger p-0 btn-delete-resource" data-id="{{ res.id }}"><i class="fa-solid fa-xmark"></i></button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-secondary mb-0 small">No shared resources linked yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- Project Comments & Discussion Card -->
+        <div class="card card-custom p-4 mb-4">
+            <h4 class="fw-bold text-cyan mb-3"><i class="fa-solid fa-comments me-2"></i> Discussion Thread</h4>
+
+            <form id="comment-form" class="mb-4">
+                <div class="input-group">
+                    <input type="text" id="comment-input" class="form-control" placeholder="Share a thought or project update..." required>
+                    <button type="submit" class="btn btn-primary-custom"><i class="fa-solid fa-paper-plane me-1"></i> Post</button>
+                </div>
+            </form>
+
+            <div class="list-group list-group-flush bg-transparent">
+                {% if comments %}
+                    {% for c in comments %}
+                    <div class="list-group-item bg-transparent text-light border-secondary border-opacity-25 px-0 py-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-info small">{{ c.author_name }} <span class="badge bg-secondary ms-1">{{ c.author_role }}</span></span>
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-muted" style="font-size: 0.75rem;">{{ c.created_at }}</small>
+                                {% if c.author_id == session.get('user_id') or session.get('role') in ['faculty', 'admin'] %}
+                                <button class="btn btn-sm btn-link text-danger p-0 btn-delete-comment" data-id="{{ c.id }}"><i class="fa-solid fa-trash-can" style="font-size: 0.8rem;"></i></button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="text-light mb-0 small">{{ c.comment_text }}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-secondary mb-0 small">No comments posted yet. Start the discussion!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: NLP Similarity, Simulator & AI Teammates -->
+    <div class="col-lg-5">
+        <!-- NLP Similarity Report Card -->
+        <div class="card card-custom p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h4 class="fw-bold text-cyan mb-0"><i class="fa-solid fa-brain me-2"></i> NLP Similarity</h4>
+                <a href="/api/export/similarity/{{ project.id }}.csv" class="btn btn-sm btn-outline-custom">
+                    <i class="fa-solid fa-file-csv me-1"></i> Export
+                </a>
+            </div>
+            <p class="text-secondary small mb-3">Automatic topic similarity detection against stored network projects:</p>
+
+            {% if similar_projects %}
+                <div class="alert alert-warning border-0 small py-2 mb-3">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Similarity is a review signal for overlap, not automated plagiarism proof.
+                </div>
+                {% for sim in similar_projects %}
+                <div class="p-3 bg-dark rounded mb-2 border border-secondary border-opacity-25">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold mb-0"><a href="{{ url_for('project_detail', project_id=sim.project_id) }}" class="text-info">{{ sim.title }}</a></h6>
+                        <span class="badge bg-danger">{{ sim.similarity_percentage }}% Match</span>
+                    </div>
+                    <small class="text-secondary d-block mb-1">Owner: {{ sim.creator_name }} &bull; Status: {{ sim.status | capitalize }}</small>
+                    {% if sim.common_keywords %}
+                    <div class="mb-1">
+                        {% for kw in sim.common_keywords %}
+                        <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ kw }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <small class="text-light"><i class="fa-solid fa-magnifying-glass me-1"></i> {{ sim.explanation }}</small>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-success border-0 mb-0">
+                    <i class="fa-solid fa-circle-check me-1"></i> Excellent! No duplicate or highly similar projects detected (0% Similarity).
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- What-If Simulator -->
+        {% if session.get('role') == 'student' %}
+        <div class="card card-custom p-4 mb-4">
+            <h4 class="fw-bold text-cyan mb-2"><i class="fa-solid fa-sliders me-2"></i> What-If Skill Simulator</h4>
+            <p class="text-secondary small mb-3">Simulate how acquiring a new skill improves your compatibility for this project.</p>
+
+            <form id="what-if-sim-form">
+                <input type="hidden" id="sim-project-id" value="{{ project.id }}">
+                <div class="mb-2">
+                    <label class="form-label text-secondary small">Hypothetical Skill to Acquire</label>
+                    <input type="text" id="sim-skill-input" class="form-control" placeholder="e.g. PyTorch, Docker, React" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary-custom w-100">Run What-If Simulation</button>
+            </form>
+
+            <div id="sim-result-container"></div>
+        </div>
+        {% endif %}
+
+        <!-- AI Teammate Recommendations for Creator -->
+        {% if is_creator and teammate_recs %}
+        <div class="card card-custom p-4 mb-4">
+            <h4 class="fw-bold text-cyan mb-2"><i class="fa-solid fa-user-gear me-2"></i> AI Teammate Recommendations</h4>
+            <p class="text-secondary small mb-3">Recommended students based on skill coverage, CGPA, and availability:</p>
+
+            {% for rec in teammate_recs %}
+            <div class="p-3 bg-dark rounded mb-3 border border-secondary border-opacity-25">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="fw-bold mb-0 text-white">{{ rec.name }}</h6>
+                    <span class="badge bg-success">{{ rec.match_percentage }}% Fit</span>
+                </div>
+                <small class="text-secondary d-block mb-1">Year {{ rec.year }} &bull; CGPA {{ rec.cgpa }} &bull; {{ rec.availability_hours }} hrs/wk</small>
+                <small class="text-info d-block mb-1"><i class="fa-solid fa-check-double me-1"></i> Skills: {{ rec.skills }}</small>
+                <small class="text-secondary d-block mb-2"><i class="fa-solid fa-circle-info me-1"></i> {{ rec.explanation }}</small>
+                <button class="btn btn-sm btn-outline-custom w-100 btn-invite-student" data-project-id="{{ project.id }}" data-student-id="{{ rec.student_id }}">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Invite to Team
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal for Faculty Rejection Reason -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-danger fw-bold"><i class="fa-solid fa-xmark-circle me-1"></i> Reject Project</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Rejection Reason / Guidance for Student</label>
+                    <textarea id="rejection-reason-input" class="form-control" rows="3" placeholder="Provide constructive feedback explaining why this project is rejected..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btn-confirm-reject-project" data-project-id="{{ project.id }}" class="btn btn-danger">Confirm Rejection</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Join Request -->
+<div class="modal fade" id="joinModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyan fw-bold">Request to Join Project</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary">Send a message to the project leader explaining your interest and skill fit.</p>
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Introductory Message</label>
+                    <textarea id="join-request-msg" class="form-control" rows="3" placeholder="Hi! I have experience with Python and Flask and would love to contribute to your team."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btn-submit-join-request" data-project-id="{{ project.id }}" class="btn btn-primary-custom">Submit Request</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Add Task -->
+<div class="modal fade" id="addTaskModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyan fw-bold"><i class="fa-solid fa-plus-circle me-1"></i> Add Project Task</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-task-form">
+                    <input type="hidden" id="task-project-id" value="{{ project.id }}">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">Task Title *</label>
+                        <input type="text" id="task-title" class="form-control" placeholder="e.g. Implement User Authentication System" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">Task Description</label>
+                        <textarea id="task-description" class="form-control" rows="3" placeholder="Briefly describe deliverables..."></textarea>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Assign To</label>
+                            <select id="task-assigned-to" class="form-select">
+                                <option value="">Unassigned</option>
+                                {% for m in members %}
+                                <option value="{{ m.student_id }}">{{ m.name }} ({{ m.role_in_project }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary">Priority</label>
+                            <select id="task-priority" class="form-select">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary">Due Date</label>
+                            <input type="date" id="task-due-date" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary">Initial Status</label>
+                            <select id="task-status" class="form-select">
+                                <option value="pending" selected>To Do</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-secondary">Progress %</label>
+                            <input type="number" id="task-progress" class="form-control" min="0" max="100" value="0" required>
+                        </div>
+                    </div>
+                    <div class="text-end border-top border-secondary pt-3">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" id="btn-submit-task" class="btn btn-primary-custom">Create Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Add Milestone -->
+<div class="modal fade" id="addMilestoneModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyan fw-bold">Define Project Milestone</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-milestone-form">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">Milestone Title *</label>
+                        <input type="text" id="ms-title" class="form-control" placeholder="e.g. Beta Release & User Testing" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">Description</label>
+                        <textarea id="ms-description" class="form-control" rows="2" placeholder="Key deliverables expected..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">Target Due Date</label>
+                        <input type="date" id="ms-due-date" class="form-control">
+                    </div>
+                    <div class="text-end border-top border-secondary pt-3">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-custom">Save Milestone</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Add Resource -->
+<div class="modal fade" id="addResourceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-cyan fw-bold">Share Project Resource</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-resource-form">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">Resource Title *</label>
+                        <input type="text" id="res-title" class="form-control" placeholder="e.g. GitHub Repository, Figma Design, Documentation" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">URL / Link *</label>
+                        <input type="url" id="res-url" class="form-control" placeholder="https://github.com/org/repo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">Description</label>
+                        <input type="text" id="res-description" class="form-control" placeholder="Brief note about this link...">
+                    </div>
+                    <div class="text-end border-top border-secondary pt-3">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-custom">Add Resource</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const projectId = {{ project.id }};
+
+    // Faculty rejection with reason modal handler
+    const btnConfirmReject = document.getElementById('btn-confirm-reject-project');
+    if (btnConfirmReject) {
+        btnConfirmReject.addEventListener('click', async () => {
+            const reason = document.getElementById('rejection-reason-input').value;
+            try {
+                const res = await fetch(`/api/projects/${projectId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rejection_reason: reason })
+                });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error || 'Rejection failed.');
+            } catch (err) { alert('Error processing rejection.'); }
+        });
+    }
+
+
+    // Delete Task Handler
+    document.querySelectorAll('.btn-delete-project-task').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('Delete this task?')) return;
+            const taskId = btn.dataset.taskId;
+            try {
+                const res = await fetch(`/api/tasks/${taskId}/delete`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error);
+            } catch (err) { alert('Error deleting task.'); }
+        });
+    });
+
+    // Milestone Add Form
+    const addMilestoneForm = document.getElementById('add-milestone-form');
+    if (addMilestoneForm) {
+        addMilestoneForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                title: document.getElementById('ms-title').value,
+                description: document.getElementById('ms-description').value,
+                due_date: document.getElementById('ms-due-date').value
+            };
+            try {
+                const res = await fetch(`/api/projects/${projectId}/milestones`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error);
+            } catch (err) { alert('Error adding milestone.'); }
+        });
+    }
+
+    // Toggle Milestone Status
+    document.querySelectorAll('.btn-toggle-milestone').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const msId = btn.dataset.id;
+            const status = btn.dataset.status;
+            try {
+                const res = await fetch(`/api/milestones/${msId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error);
+            } catch (err) { alert('Error updating milestone.'); }
+        });
+    });
+
+    // Delete Milestone
+    document.querySelectorAll('.btn-delete-milestone').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('Delete milestone?')) return;
+            const msId = btn.dataset.id;
+            try {
+                const res = await fetch(`/api/milestones/${msId}/delete`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error);
+            } catch (err) { alert('Error deleting milestone.'); }
+        });
+    });
+
+    // Add Resource Form
+    const addResourceForm = document.getElementById('add-resource-form');
+    if (addResourceForm) {
+        addResourceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                title: document.getElementById('res-title').value,
+                resource_url: document.getElementById('res-url').value,
+                description: document.getElementById('res-description').value
+            };
+            try {
+                const res = await fetch(`/api/projects/${projectId}/resources`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error);
+            } catch (err) { alert('Error adding resource.'); }
+        });
+    }
+
+    // Delete Resource
+    document.querySelectorAll('.btn-delete-resource').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('Delete resource link?')) return;
+            const resId = btn.dataset.id;
+            try {
+                const res = await fetch(`/api/resources/${resId}/delete`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error);
+            } catch (err) { alert('Error deleting resource.'); }
+        });
+    });
+
+    // Comments Form
+    const commentForm = document.getElementById('comment-form');
+    if (commentForm) {
+        commentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = document.getElementById('comment-input').value;
+            try {
+                const res = await fetch(`/api/projects/${projectId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ comment_text: text })
+                });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error);
+            } catch (err) { alert('Error posting comment.'); }
+        });
+    }
+
+    // Delete Comment
+    document.querySelectorAll('.btn-delete-comment').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const commentId = btn.dataset.id;
+            try {
+                const res = await fetch(`/api/comments/${commentId}/delete`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error);
+            } catch (err) { alert('Error deleting comment.'); }
+        });
+    });
+});
+</script>
+{% endblock %}

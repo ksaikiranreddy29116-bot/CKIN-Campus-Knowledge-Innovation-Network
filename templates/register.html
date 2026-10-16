@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Register — CKIN{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-md-8 col-lg-7">
+        <div class="card card-custom p-4">
+            <h3 class="fw-bold mb-1 text-cyan">Student Registration</h3>
+            <p class="text-secondary mb-4">Join the Campus Knowledge & Innovation Network</p>
+
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary">Full Name *</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Alex Rivera">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary">Email Address *</label>
+                        <input type="email" name="email" class="form-control" required placeholder="student@university.edu">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary">Password *</label>
+                        <input type="password" name="password" class="form-control" required placeholder="••••••••">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary">Academic Year</label>
+                        <select name="year" class="form-select">
+                            <option value="1">1st Year (Freshman)</option>
+                            <option value="2">2nd Year (Sophomore)</option>
+                            <option value="3" selected>3rd Year (Junior)</option>
+                            <option value="4">4th Year (Senior)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary">Current CGPA (0.0 - 10.0)</label>
+                        <input type="number" step="0.1" name="cgpa" class="form-control" value="8.5" min="0" max="10">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary">Weekly Availability (Hours)</label>
+                        <input type="number" name="availability_hours" class="form-control" value="15" min="1" max="40">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-secondary">Technical Skills (comma-separated)</label>
+                        <input type="text" name="skills" class="form-control" placeholder="Python, Flask, SQLite, Machine Learning, React">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-secondary">Research / Project Interests</label>
+                        <input type="text" name="interests" class="form-control" placeholder="Artificial Intelligence, Web Application, Data Science">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary">Preferred Project Type</label>
+                        <select name="preferred_project_type" class="form-select">
+                            <option value="Web Application">Web Application</option>
+                            <option value="Mobile Application">Mobile Application</option>
+                            <option value="Data Science">Data Science</option>
+                            <option value="IoT & Analytics">IoT & Analytics</option>
+                            <option value="Research Paper">Research Paper</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary">Past Project Score (0-100)</label>
+                        <input type="number" name="past_project_score" class="form-control" value="85" min="0" max="100">
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-2">
+                    <button type="submit" class="btn btn-primary-custom w-100 py-2">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

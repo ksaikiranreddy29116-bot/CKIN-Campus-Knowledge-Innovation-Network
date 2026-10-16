@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+env/
+instance/*.db
+!instance/.gitkeep
+database/*.db
+!database/.gitkeep
+models/*.joblib
+!models/.gitkeep
+.env
+.pytest_cache/

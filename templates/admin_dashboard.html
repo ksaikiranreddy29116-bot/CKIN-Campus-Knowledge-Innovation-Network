@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Administrator Monitoring — CKIN{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="fw-bold mb-1 text-cyan"><i class="fa-solid fa-user-shield me-2"></i> System Administrator Control Panel</h2>
+                    <p class="text-secondary mb-0">Platform overview, database user monitoring, project submission tracking, and system audit logs.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/api/export/admin-stats.csv" class="btn btn-primary-custom">
+                        <i class="fa-solid fa-file-csv me-1"></i> Export Metrics CSV
+                    </a>
+                    <a href="/api/export/projects.csv" class="btn btn-outline-custom">
+                        <i class="fa-solid fa-download me-1"></i> Export Projects
+                    </a>
+                    <a href="/api/export/tasks.csv" class="btn btn-outline-custom">
+                        <i class="fa-solid fa-tasks me-1"></i> Export Tasks
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Platform Metrics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-number text-info">{{ metrics.student_count }}</div>
+            <div class="stat-label">Registered Students</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-number text-warning">{{ metrics.faculty_count }}</div>
+            <div class="stat-label">Faculty Reviewers</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-number text-cyan">{{ metrics.total_projects }}</div>
+            <div class="stat-label">Total Projects</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-number text-success">{{ metrics.approved_count }}</div>
+            <div class="stat-label">Active Approved</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- User Management Table -->
+    <div class="col-lg-7">
+        <div class="card card-custom p-4">
+            <h4 class="fw-bold text-cyan mb-3"><i class="fa-solid fa-users me-2"></i> Registered User Accounts</h4>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="text-secondary small">
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in recent_users %}
+                        <tr>
+                            <td>#{{ u.id }}</td>
+                            <td class="fw-bold text-white">{{ u.name }}</td>
+                            <td class="text-secondary"><code>{{ u.email }}</code></td>
+                            <td>
+                                {% if u.role == 'student' %}
+                                <span class="badge bg-primary">Student</span>
+                                {% elif u.role == 'faculty' %}
+                                <span class="badge bg-warning text-dark">Faculty</span>
+                                {% else %}
+                                <span class="badge bg-danger">Admin</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Disabled</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent System Audit Log -->
+    <div class="col-lg-5">
+        <div class="card card-custom p-4">
+            <h4 class="fw-bold text-cyan mb-3"><i class="fa-solid fa-clock-rotate-left me-2"></i> System Activity Audit Log</h4>
+            <div class="list-group list-group-flush bg-transparent">
+                {% for act in recent_activities %}
+                <div class="list-group-item bg-transparent text-light border-secondary border-opacity-25 px-0 py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong class="text-cyan">{{ act.actor_name }}</strong>
+                        <small class="text-secondary" style="font-size: 0.75rem;">{{ act.created_at }}</small>
+                    </div>
+                    <small class="d-block text-secondary">{{ act.action }}: {{ act.details }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

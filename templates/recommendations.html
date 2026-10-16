@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Recommendation Engine — CKIN{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom p-4">
+            <h2 class="fw-bold mb-1 text-cyan"><i class="fa-solid fa-wand-magic-sparkles me-2"></i> AI Recommendation Engine</h2>
+            <p class="text-secondary mb-0">
+                Project matching powered by hybrid ML ranking (35% Compatibility + 45% Machine Learning + 20% TF-IDF Text Similarity).
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% if recommendations %}
+        {% for rec in recommendations %}
+        <div class="col-12">
+            <div class="card card-custom p-4 border-primary border-opacity-25">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-info text-dark">{{ rec.domain }}</span>
+                            <span class="badge bg-secondary">{{ rec.difficulty_level }}</span>
+                            <span class="badge bg-primary">Final Match: {{ rec.final_percentage }}%</span>
+                        </div>
+                        <h4 class="fw-bold text-white mb-2">
+                            <a href="{{ url_for('project_detail', project_id=rec.project_id) }}" class="text-white text-decoration-none">
+                                {{ rec.title }}
+                            </a>
+                        </h4>
+                        <p class="text-light mb-3">{{ rec.description }}</p>
+
+                        <!-- Score Breakdown Badges -->
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="badge bg-dark border border-secondary text-cyan">Compatibility: {{ (rec.compatibility_score * 100) | round(1) }}%</span>
+                            <span class="badge bg-dark border border-secondary text-cyan">ML Model: {{ (rec.ml_score * 100) | round(1) }}%</span>
+                            <span class="badge bg-dark border border-secondary text-cyan">Text Similarity: {{ (rec.similarity_score * 100) | round(1) }}%</span>
+                        </div>
+
+                        <div class="bg-dark p-3 rounded border border-secondary border-opacity-25">
+                            <small class="text-info fw-bold d-block mb-1"><i class="fa-solid fa-lightbulb me-1"></i> Recommendation Reason:</small>
+                            <small class="text-light">{{ rec.explanation }}</small>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Skills & CTA -->
+                    <div class="col-lg-4 d-flex flex-column justify-content-center border-start border-secondary border-opacity-25 ps-lg-4 mt-3 mt-lg-0">
+                        <div class="mb-3">
+                            <small class="text-secondary d-block">Matching Skills:</small>
+                            {% for ms in rec.gap_info.matching_skills %}
+                            <span class="badge bg-success me-1 mb-1">{{ ms }}</span>
+                            {% endfor %}
+
+                            {% if rec.gap_info.missing_skills %}
+                            <small class="text-secondary d-block mt-2">Missing Skills to Learn:</small>
+                            {% for ms in rec.gap_info.missing_skills %}
+                            <span class="badge bg-secondary me-1 mb-1">{{ ms }}</span>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <a href="{{ url_for('project_detail', project_id=rec.project_id) }}" class="btn btn-primary-custom w-100 py-2">
+                            Inspect Project & Apply
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card card-custom p-5 text-center">
+                <i class="fa-solid fa-folder-open text-secondary fs-1 mb-3"></i>
+                <h5 class="fw-bold">No Projects Found for Recommendation</h5>
+                <p class="text-secondary mb-0">Check back once more projects are approved by faculty!</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

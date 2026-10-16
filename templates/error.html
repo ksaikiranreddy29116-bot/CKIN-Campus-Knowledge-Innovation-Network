@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Error — CKIN{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-5">
+    <div class="col-md-6 text-center">
+        <div class="card card-custom p-5 border-danger">
+            <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-3"></i>
+            <h3 class="fw-bold text-white mb-2">Notice</h3>
+            <p class="text-secondary mb-4">{{ message or 'An unexpected error occurred.' }}</p>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary-custom">Return to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

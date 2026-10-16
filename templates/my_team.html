@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}My Team & Collaboration — CKIN{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom p-4">
+            <h2 class="fw-bold mb-1 text-cyan"><i class="fa-solid fa-users me-2"></i> Team & Collaboration Center</h2>
+            <p class="text-secondary mb-0">Manage incoming project team invitations, sent join requests, and team memberships.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Received Team Invitations -->
+    <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100">
+            <h4 class="fw-bold text-cyan mb-3"><i class="fa-solid fa-envelope me-2"></i> Received Team Invitations</h4>
+
+            {% if invitations %}
+                {% for inv in invitations %}
+                <div class="p-3 bg-dark rounded mb-3 border border-secondary border-opacity-25">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold mb-0 text-white">{{ inv.project_title }}</h6>
+                        <span class="badge bg-{{ 'success' if inv.status == 'accepted' else ('danger' if inv.status in ['declined', 'rejected', 'cancelled'] else 'warning') }}">
+                            {{ inv.status | capitalize }}
+                        </span>
+                    </div>
+                    <p class="text-secondary small mb-2">Invited by <strong>{{ inv.inviter_name }}</strong> &bull; {{ inv.created_at }}</p>
+
+                    {% if inv.status == 'pending' %}
+                    <div class="d-flex gap-2 mt-2">
+                        <button class="btn btn-sm btn-success fw-bold flex-grow-1 btn-respond-invite" data-invitation-id="{{ inv.id }}" data-action="accept">
+                            Accept Invitation
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger flex-grow-1 btn-respond-invite" data-invitation-id="{{ inv.id }}" data-action="decline">
+                            Decline
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-secondary mb-0 py-3 text-center">No team invitations received.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- My Sent Join Requests -->
+    <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100">
+            <h4 class="fw-bold text-cyan mb-3"><i class="fa-solid fa-paper-plane me-2"></i> My Sent Join Requests</h4>
+
+            {% if join_requests %}
+                {% for req in join_requests %}
+                <div class="p-3 bg-dark rounded mb-3 border border-secondary border-opacity-25">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold mb-0 text-white">{{ req.project_title }}</h6>
+                        <span class="badge bg-{{ 'success' if req.status == 'accepted' else ('danger' if req.status in ['rejected', 'cancelled'] else 'warning') }}">
+                            {{ req.status | capitalize }}
+                        </span>
+                    </div>
+                    {% if req.message %}
+                    <p class="text-secondary small mb-1">Message: "{{ req.message }}"</p>
+                    {% endif %}
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <small class="text-secondary">Submitted {{ req.created_at }}</small>
+                        {% if req.status == 'pending' %}
+                        <button class="btn btn-sm btn-outline-danger btn-cancel-join-req" data-id="{{ req.id }}">
+                            Cancel Request
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-secondary mb-0 py-3 text-center">You have not submitted any join requests.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- My Projects & Team Capacities -->
+{% if my_projects %}
+<div class="row">
+    <div class="col-12">
+        <div class="card card-custom p-4">
+            <h4 class="fw-bold text-cyan mb-3"><i class="fa-solid fa-folder-open me-2"></i> My Projects & Team Capacities</h4>
+            <div class="row g-3">
+                {% for p in my_projects %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="p-3 bg-dark rounded border border-secondary border-opacity-25">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0 text-white"><a href="{{ url_for('project_detail', project_id=p.id) }}" class="text-info text-decoration-none">{{ p.title }}</a></h6>
+                            <span class="badge bg-info text-dark">{{ p.status | capitalize }}</span>
+                        </div>
+                        <small class="text-secondary d-block mb-2">Domain: {{ p.domain }} &bull; Max Team Size: {{ p.team_size }}</small>
+                        <a href="{{ url_for('project_detail', project_id=p.id) }}" class="btn btn-sm btn-outline-custom w-100">
+                            Manage Team & Requests
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Respond to invitation
+    document.querySelectorAll('.btn-respond-invite').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const invId = btn.dataset.invitationId;
+            const action = btn.dataset.action;
+            try {
+                const res = await fetch(`/api/collaboration/invitations/${invId}/respond`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error || 'Operation failed.');
+            } catch (err) { alert('An error occurred.'); }
+        });
+    });
+
+    // Cancel join request
+    document.querySelectorAll('.btn-cancel-join-req').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('Cancel this join request?')) return;
+            const reqId = btn.dataset.id;
+            try {
+                const res = await fetch(`/api/collaboration/join-requests/${reqId}/cancel`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error || 'Failed to cancel request.');
+            } catch (err) { alert('An error occurred.'); }
+        });
+    });
+});
+</script>
+{% endblock %}

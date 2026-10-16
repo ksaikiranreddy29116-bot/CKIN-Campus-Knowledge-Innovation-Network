@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard — CKIN{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom p-4 bg-gradient">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="fw-bold mb-1 text-cyan">Welcome back, {{ student.name }}!</h2>
+                    <p class="text-secondary mb-0">
+                        Year {{ student.profile.year if student.profile else '3' }} &bull; CGPA {{ student.profile.cgpa if student.profile else '8.5' }} &bull; {{ student.profile.availability_hours if student.profile else '15' }} hrs/week available
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('create_project_page') }}" class="btn btn-primary-custom me-2">
+                        <i class="fa-solid fa-plus me-1"></i> Submit Project
+                    </a>
+                    <a href="{{ url_for('recommendations_page') }}" class="btn btn-outline-custom">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> View AI Matches
+                    </a>
+                </div>
+            </div>
+            {% if student.profile and student.profile.skills %}
+            <div class="mt-3 pt-3 border-top border-secondary border-opacity-25">
+                <small class="text-secondary d-block mb-1">Your Stored Skills:</small>
+                {% for skill in student.profile.skills.split(',') %}
+                <span class="badge bg-secondary me-1 mb-1">{{ skill.strip() }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Pending Team Invitations Alert -->
+{% if pending_invites %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom p-3 border-warning">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-warning fw-bold mb-1"><i class="fa-solid fa-envelope me-2"></i> You have {{ pending_invites|length }} pending team invitation(s)!</h6>
+                    <p class="text-secondary mb-0 small">Project owners want you on their team based on your skills.</p>
+                </div>
+                <a href="{{ url_for('my_team_page') }}" class="btn btn-warning btn-sm fw-bold">Review Invitations</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Left Column: Top Recommended Projects -->
+    <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0 text-cyan"><i class="fa-solid fa-brain me-2"></i> AI-Recommended Projects</h4>
+            <a href="{{ url_for('recommendations_page') }}" class="text-info text-decoration-none small">See all &rarr;</a>
+        </div>
+
+        {% if recommendations %}
+            {% for rec in recommendations %}
+            <div class="card card-custom p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="badge bg-info text-dark mb-1">{{ rec.domain }}</span>
+                        <h5 class="fw-bold mb-1">
+                            <a href="{{ url_for('project_detail', project_id=rec.project_id) }}" class="text-white text-decoration-none">
+                                {{ rec.title }}
+                            </a>
+                        </h5>
+                        <p class="text-secondary small mb-2">By {{ rec.creator_name }} &bull; {{ rec.difficulty_level }}</p>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-success fs-6">{{ rec.final_percentage }}% Match</span>
+                    </div>
+                </div>
+                <p class="text-light small mb-2">{{ rec.description[:130] }}...</p>
+                <div class="bg-dark p-2 rounded mb-2">
+                    <small class="text-info"><i class="fa-solid fa-circle-info me-1"></i> {{ rec.explanation }}</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-secondary">Req. Skills: {{ rec.required_skills }}</small>
+                    <a href="{{ url_for('project_detail', project_id=rec.project_id) }}" class="btn btn-sm btn-outline-custom">View Details</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card card-custom p-4 text-center">
+                <p class="text-secondary mb-0">No recommendations available at this time.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: My Submitted Projects -->
+    <div class="col-lg-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0 text-cyan"><i class="fa-solid fa-folder-open me-2"></i> My Projects</h4>
+            <a href="{{ url_for('create_project_page') }}" class="text-info text-decoration-none small">+ Create New</a>
+        </div>
+
+        {% if my_projects %}
+            {% for proj in my_projects %}
+            <div class="card card-custom p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0">
+                        <a href="{{ url_for('project_detail', project_id=proj.id) }}" class="text-white text-decoration-none">
+                            {{ proj.title }}
+                        </a>
+                    </h6>
+                    <span class="badge badge-{{ proj.status }}">{{ proj.status | capitalize }}</span>
+                </div>
+                <p class="text-secondary small mb-2">{{ proj.domain }} &bull; {{ proj.project_type }}</p>
+                <a href="{{ url_for('project_detail', project_id=proj.id) }}" class="btn btn-sm btn-outline-secondary w-100">Manage Project</a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card card-custom p-4 text-center">
+                <p class="text-secondary mb-3">You haven't submitted any projects yet.</p>
+                <a href="{{ url_for('create_project_page') }}" class="btn btn-sm btn-primary-custom">Submit Your First Project</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

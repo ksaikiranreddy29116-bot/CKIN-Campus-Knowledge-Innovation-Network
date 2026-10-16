@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Review Dashboard — CKIN{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="fw-bold mb-1 text-cyan"><i class="fa-solid fa-graduation-cap me-2"></i> Faculty Review Portal</h2>
+                    <p class="text-secondary mb-0">Evaluate student project submissions, review similarity reports, and manage academic approvals.</p>
+                </div>
+                <div>
+                    <a href="/api/export/projects.csv" class="btn btn-outline-custom">
+                        <i class="fa-solid fa-file-csv me-1"></i> Export Projects CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-box">
+            <div class="stat-number text-warning">{{ pending_projects|length }}</div>
+            <div class="stat-label">Pending Reviews</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-box">
+            <div class="stat-number text-success">{{ approved_projects|length }}</div>
+            <div class="stat-label">Approved Projects</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-box">
+            <div class="stat-number text-danger">{{ rejected_projects|length }}</div>
+            <div class="stat-label">Rejected Projects</div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Submissions Queue -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h4 class="fw-bold text-cyan mb-3"><i class="fa-solid fa-hourglass-half me-2"></i> Pending Submissions Review Queue</h4>
+
+        {% if pending_projects %}
+            {% for proj in pending_projects %}
+            <div class="card card-custom p-4 mb-3 border-warning border-opacity-50">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-warning text-dark">Pending Review</span>
+                            <span class="badge bg-info text-dark">{{ proj.domain }}</span>
+                            <span class="badge bg-secondary">{{ proj.project_type }}</span>
+                        </div>
+                        <h4 class="fw-bold text-white mb-2">
+                            <a href="{{ url_for('project_detail', project_id=proj.id) }}" class="text-white text-decoration-none">
+                                {{ proj.title }}
+                            </a>
+                        </h4>
+                        <p class="text-light mb-3">{{ proj.description }}</p>
+
+                        <div class="row g-2 text-secondary small mb-3">
+                            <div class="col-md-6"><i class="fa-solid fa-user me-1"></i> <strong>Submitted By:</strong> {{ proj.creator_name }}</div>
+                            <div class="col-md-6"><i class="fa-solid fa-code me-1"></i> <strong>Required Skills:</strong> {{ proj.required_skills }}</div>
+                            <div class="col-md-6"><i class="fa-solid fa-clock me-1"></i> <strong>Commitment:</strong> {{ proj.weekly_commitment }} hrs/week</div>
+                            <div class="col-md-6"><i class="fa-solid fa-users me-1"></i> <strong>Team Size:</strong> {{ proj.team_size }} members</div>
+                        </div>
+
+                        <!-- Similarity Signals section -->
+                        {% if proj.similar_projects %}
+                        <div class="bg-dark p-3 rounded mb-3 border border-secondary border-opacity-25">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-warning fw-bold mb-0">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i> NLP Duplicate Detection Alert ({{ proj.similar_projects|length }} Similar Projects Found)
+                                </h6>
+                                <a href="/api/export/similarity/{{ proj.id }}.csv" class="btn btn-sm btn-link text-info p-0"><i class="fa-solid fa-download me-1"></i> Export Signal</a>
+                            </div>
+                            <small class="text-secondary d-block mb-2">Note: Similarity is a review signal for potential overlap, not definitive proof of plagiarism.</small>
+                            <div class="list-group list-group-flush bg-transparent">
+                                {% for sim in proj.similar_projects %}
+                                <div class="list-group-item bg-transparent text-secondary p-1 border-0">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-light">&bull; Project #{{ sim.project_id }}: "{{ sim.title }}"</span>
+                                        <span class="badge bg-danger">{{ sim.similarity_percentage }}% Similar</span>
+                                    </div>
+                                    <small class="text-secondary ps-3 d-block">{{ sim.explanation }}</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="bg-dark p-2 rounded mb-3">
+                            <small class="text-success"><i class="fa-solid fa-circle-check me-1"></i> NLP Check: No duplicate projects detected (0% Similarity).</small>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Right Column: Faculty Action Buttons -->
+                    <div class="col-lg-4 d-flex flex-column justify-content-center border-start border-secondary border-opacity-25 ps-lg-4 mt-3 mt-lg-0">
+                        <h6 class="text-center text-cyan fw-bold mb-3">Review Action</h6>
+                        <button class="btn btn-success py-2 mb-2 w-100 fw-bold btn-approve-project" data-project-id="{{ proj.id }}">
+                            <i class="fa-solid fa-check-circle me-1"></i> Approve Project
+                        </button>
+                        <button class="btn btn-danger py-2 mb-2 w-100 fw-bold btn-trigger-reject" data-project-id="{{ proj.id }}">
+                            <i class="fa-solid fa-times-circle me-1"></i> Reject Project
+                        </button>
+                        <a href="{{ url_for('project_detail', project_id=proj.id) }}" class="btn btn-outline-custom w-100 mt-2">
+                            Inspect Full Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card card-custom p-5 text-center">
+                <i class="fa-solid fa-circle-check text-success fs-1 mb-3"></i>
+                <h5 class="fw-bold">All Submissions Reviewed!</h5>
+                <p class="text-secondary mb-0">There are no pending projects awaiting faculty approval.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal for Rejection Reason -->
+<div class="modal fade" id="facultyRejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-card border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-danger fw-bold"><i class="fa-solid fa-xmark-circle me-1"></i> Reject Project</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="f-reject-project-id">
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Rejection Reason / Feedback</label>
+                    <textarea id="f-rejection-reason" class="form-control" rows="3" placeholder="Provide constructive feedback explaining why this project is rejected..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btn-submit-f-reject" class="btn btn-danger">Confirm Rejection</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let activeRejectProjectId = null;
+    document.querySelectorAll('.btn-trigger-reject').forEach(btn => {
+        btn.addEventListener('click', () => {
+            activeRejectProjectId = btn.dataset.projectId;
+            const modal = new bootstrap.Modal(document.getElementById('facultyRejectModal'));
+            modal.show();
+        });
+    });
+
+    const btnSubmitReject = document.getElementById('btn-submit-f-reject');
+    if (btnSubmitReject) {
+        btnSubmitReject.addEventListener('click', async () => {
+            const reason = document.getElementById('f-rejection-reason').value;
+            if (!activeRejectProjectId) return;
+            try {
+                const res = await fetch(`/api/projects/${activeRejectProjectId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rejection_reason: reason })
+                });
+                const data = await res.json();
+                if (data.success) window.location.reload();
+                else alert(data.error || 'Rejection failed.');
+            } catch (err) { alert('An error occurred.'); }
+        });
+    }
+});
+</script>
+{% endblock %}
