@@ -1,110 +1,285 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+          content="CKIN — Campus Knowledge and Innovation Network. Discover student projects, collaborate with teammates, connect with faculty mentors, and explore AI-powered project recommendations.">
+
     <title>{% block title %}CKIN — Campus Knowledge and Innovation Network{% endblock %}</title>
-    <!-- Bootstrap 5 CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
     <!-- FontAwesome Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom Dark Aesthetic CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top"
+         aria-label="Main navigation">
+
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard') }}">
-                <i class="fa-solid fa-network-wired text-info me-2"></i>
+
+            <a class="navbar-brand d-flex align-items-center"
+               href="{{ url_for('dashboard') }}"
+               aria-label="CKIN Network home">
+
+                <i class="fa-solid fa-network-wired text-info me-2"
+                   aria-hidden="true"></i>
+
                 <span>CKIN Network</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+
+            <!-- Accessible mobile navigation toggle -->
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav"
+                aria-controls="navbarNav"
+                aria-expanded="false"
+                aria-label="Toggle navigation">
+
+                <span class="navbar-toggler-icon" aria-hidden="true"></span>
             </button>
+
             <div class="collapse navbar-collapse" id="navbarNav">
+
                 {% if session.get('user_id') %}
+
+                <!-- Main navigation links -->
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
+                        <a class="nav-link"
+                           href="{{ url_for('dashboard') }}">
+                            <i class="fa-solid fa-gauge me-1"
+                               aria-hidden="true"></i>
+                            Dashboard
+                        </a>
                     </li>
+
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('projects') }}"><i class="fa-solid fa-diagram-project me-1"></i> Projects Repository</a>
+                        <a class="nav-link"
+                           href="{{ url_for('projects') }}">
+                            <i class="fa-solid fa-diagram-project me-1"
+                               aria-hidden="true"></i>
+                            Projects Repository
+                        </a>
                     </li>
+
                     {% if session.get('role') == 'student' %}
+
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('create_project_page') }}"><i class="fa-solid fa-plus-circle me-1"></i> Submit Project</a>
+                        <a class="nav-link"
+                           href="{{ url_for('create_project_page') }}">
+                            <i class="fa-solid fa-plus-circle me-1"
+                               aria-hidden="true"></i>
+                            Submit Project
+                        </a>
                     </li>
+
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('recommendations_page') }}"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI Matches</a>
+                        <a class="nav-link"
+                           href="{{ url_for('recommendations_page') }}">
+                            <i class="fa-solid fa-wand-magic-sparkles me-1"
+                               aria-hidden="true"></i>
+                            AI Matches
+                        </a>
                     </li>
+
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('my_team_page') }}"><i class="fa-solid fa-users me-1"></i> My Team</a>
+                        <a class="nav-link"
+                           href="{{ url_for('my_team_page') }}">
+                            <i class="fa-solid fa-users me-1"
+                               aria-hidden="true"></i>
+                            My Team
+                        </a>
                     </li>
+
                     {% endif %}
+
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('tasks_page') }}"><i class="fa-solid fa-list-check me-1"></i> Tasks</a>
+                        <a class="nav-link"
+                           href="{{ url_for('tasks_page') }}">
+                            <i class="fa-solid fa-list-check me-1"
+                               aria-hidden="true"></i>
+                            Tasks
+                        </a>
                     </li>
+
                 </ul>
+
+                <!-- User actions -->
                 <ul class="navbar-nav ms-auto align-items-center">
+
+                    <!-- Notifications -->
                     <li class="nav-item me-3">
-                        <a class="nav-link position-relative" href="{{ url_for('notifications_page') }}">
-                            <i class="fa-solid fa-bell fs-5"></i>
+
+                        <a
+                            class="nav-link position-relative"
+                            href="{{ url_for('notifications_page') }}"
+                            aria-label="Notifications{% if unread_notifications_count > 0 %}, {{ unread_notifications_count }} unread{% endif %}">
+
+                            <i class="fa-solid fa-bell fs-5"
+                               aria-hidden="true"></i>
+
                             {% if unread_notifications_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                aria-hidden="true">
+
                                 {{ unread_notifications_count }}
+
                             </span>
                             {% endif %}
+
                         </a>
                     </li>
+
+                    <!-- Account dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-cyan fw-semibold" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-circle-user me-1"></i> {{ current_user.name if current_user else 'Account' }} ({{ session.get('role') | capitalize }})
+
+                        <a
+                            class="nav-link dropdown-toggle text-cyan fw-semibold"
+                            href="#"
+                            id="userDropdown"
+                            role="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+
+                            <i class="fa-solid fa-circle-user me-1"
+                               aria-hidden="true"></i>
+
+                            {{ current_user.name if current_user else 'Account' }}
+                            ({{ session.get('role') | capitalize }})
+
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('profile_page') }}"><i class="fa-solid fa-user me-2"></i> Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a></li>
+
+                        <ul
+                            class="dropdown-menu dropdown-menu-dark dropdown-menu-end"
+                            aria-labelledby="userDropdown">
+
+                            <li>
+                                <a class="dropdown-item"
+                                   href="{{ url_for('profile_page') }}">
+
+                                    <i class="fa-solid fa-user me-2"
+                                       aria-hidden="true"></i>
+                                    Profile
+                                </a>
+                            </li>
+
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item text-danger"
+                                   href="{{ url_for('logout') }}">
+
+                                    <i class="fa-solid fa-right-from-bracket me-2"
+                                       aria-hidden="true"></i>
+                                    Logout
+                                </a>
+                            </li>
+
                         </ul>
                     </li>
+
                 </ul>
+
                 {% else %}
+
+                <!-- Logged-out navigation -->
                 <ul class="navbar-nav ms-auto">
+
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                        <a class="nav-link"
+                           href="{{ url_for('login') }}">
+                            Login
+                        </a>
                     </li>
+
                     <li class="nav-item">
-                        <a class="btn btn-primary-custom ms-2" href="{{ url_for('register') }}">Register Student</a>
+                        <a class="btn btn-primary-custom ms-2"
+                           href="{{ url_for('register') }}">
+                            Register Student
+                        </a>
                     </li>
+
                 </ul>
+
                 {% endif %}
+
             </div>
         </div>
     </nav>
 
-    <main class="container my-4">
+    <!-- Main page content -->
+    <main class="container my-4" id="main-content">
+
+        <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show card-custom" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-            </div>
-            {% endfor %}
-        {% endif %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                <div
+                    class="alert alert-{{ category }} alert-dismissible fade show card-custom"
+                    role="alert">
+
+                    {{ message }}
+
+                    <button
+                        type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="alert"
+                        aria-label="Dismiss notification">
+                    </button>
+
+                </div>
+
+                {% endfor %}
+
+            {% endif %}
+
         {% endwith %}
 
         {% block content %}{% endblock %}
+
     </main>
 
+    <!-- Footer -->
     <footer class="py-3 text-center">
         <div class="container">
-            <small>&copy; 2026 CKIN — Campus Knowledge and Innovation Network. Academic AI Project Discovery Platform.</small>
+            <small>
+                &copy; 2026 CKIN — Campus Knowledge and Innovation Network.
+                Academic AI Project Discovery Platform.
+            </small>
         </div>
     </footer>
 
-    <!-- Bootstrap JS Bundle -->
+    <!-- Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
     {% block scripts %}{% endblock %}
+
 </body>
 </html>
